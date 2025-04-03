@@ -12,12 +12,6 @@ app.use((req, res, next)=> {
     next();
 });
 
-//Metodo para mostrar contacto y ordenar
-app.get("/contactos", (req, res)=>{
-    const contactos = fakeDatabase.getContactos().sort((a,b) => a.nombre.localeCompare(b.nombre));
-    res.status(200).json(contactos);
-});
-
 //Metodo para mostrar contacto por ID
 app.get("/contactos/:id", (req,res) => {
     const contacto = fakeDatabase.getContactosID(req.params.id);
@@ -36,6 +30,27 @@ app.delete("/contactos/:id", (req, res)=> {
     }else{
         res.status(404).json({error:"Contacto no encontrado"});
     }
+});
+
+//Mostrar contactos con una frase
+app.get("/contactos", (req,res)=>{
+    const {frase} = req.query;
+    let contactos =fakeDatabase.getContactos();
+
+    if (frase){
+        const fraseMiniscula = frase.toLowerCase();
+        contactos = contactos.filter(contacto =>
+            contacto.nombre.toLowerCase().includes(fraseMiniscula)
+        );
+    }
+    if (frase === ""){
+        return res.status(400).json({});
+    }
+    if (contactos.length === 0){
+        return res.status(200).json([]);
+    }
+    contactos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+    res.status(200).json(contactos);
 });
 
 //Iniciar servidor

@@ -2,10 +2,11 @@ const express = require("express");
 const app = express();
 const Ajv = require("ajv");
 const PORT = 3000;
+const configContactos = require("./configContactos");
 
 const { error } = require("ajv/dist/vocabularies/applicator/dependencies");
 const ajv = new Ajv();
-const fakeDatabase = require("./fakedatabase");
+
 const { validateAdditionalItems } = require("ajv/dist/vocabularies/applicator/additionalItems");
 
 app.use(express.json());
@@ -25,7 +26,7 @@ app.use((req, res, next)=> {
 
 //Metodo para mostrar contacto por ID
 app.get("/contactos/:id", (req,res) => {
-    const contacto = fakeDatabase.getContactosID(req.params.id);
+    const contacto = configContactos.getContactosID(req.params.id);
     if(contacto){
         res.status(200).json(contacto);
     }else{
@@ -46,7 +47,7 @@ app.delete("/contactos/:id", (req, res)=> {
 //Mostrar contactos con una frase
 app.get("/contactos", (req,res)=>{
     const {frase} = req.query;
-    let contactos =fakeDatabase.getContactos();
+    let contactos =configContactos.getContactos();
 
     if (frase){
         const fraseMiniscula = frase.toLowerCase();
@@ -98,7 +99,7 @@ const validarHeaders = (req, res, next) =>{
 
 //Metodo para agregar contacto
 app.post("/contactos", validarHeaders, (req, res, next)=>{
-    const completado =  fakeDatabase.addContacto(req.contactoD);
+    const completado =  configContactos.addContacto(req.contactoD);
     if (completado){
        next();
     } else {

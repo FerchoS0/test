@@ -6,7 +6,7 @@ const contactos = [
 
 const getContactos = () => contactos;
 const getContactosID = (id) => contactos.find(contactos => contactos.id === id);
-const deleteContacto = (id) => {
+/*const deleteContacto = (id) => {
     const index = contactos.findIndex(contactos => contactos.id === id);
     if (index !== -1){
         contactos.splice(index, 1);
@@ -15,6 +15,7 @@ const deleteContacto = (id) => {
     console.log('Contacto no encontrado')
     return false;
 };
+*/
 const addContacto = (nuevoContacto) => {
     const existe = contactos.some(contacto => contacto.id === nuevoContacto.id);
     if(existe){
@@ -24,4 +25,4 @@ const addContacto = (nuevoContacto) => {
     console.log('Contacto agregado');
     return true;
 }
-module.exports = {getContactos, getContactosID, deleteContacto, addContacto};
+module.exports = {getContactos, getContactosID, addContacto};

@@ -10,6 +10,13 @@ const { validateAdditionalItems } = require("ajv/dist/vocabularies/applicator/ad
 
 app.use(express.json());
 
+//Metodo para imprimir IP
+const imprimirIP = (req, res, next)=>{
+    const ip = req.ip ||  req.connection.remoteAddress || req.headers['x-forwarded-for'] || null;
+    console.log(`🖥️ Contacto creado desde la IP: ${ip}`);
+    next();
+};
+
 //Metodo para solicitar
 app.use((req, res, next)=> {
     console.log('Solicitud recibida: ${req.method} ${req.url}');
@@ -26,7 +33,7 @@ app.get("/contactos/:id", (req,res) => {
     }
 });
 
-//Metodo para eliminar contacto por ID
+/*Metodo para eliminar contacto por ID
 app.delete("/contactos/:id", (req, res)=> {
     const eliminar = fakeDatabase.deleteContacto(req.params.id);
     if(eliminar) {
@@ -35,7 +42,7 @@ app.delete("/contactos/:id", (req, res)=> {
         res.status(404).json({error:"Contacto no encontrado"});
     }
 });
-
+*/
 //Mostrar contactos con una frase
 app.get("/contactos", (req,res)=>{
     const {frase} = req.query;
@@ -61,48 +68,54 @@ app.get("/contactos", (req,res)=>{
 const esquema = {
     type: "object",
     properties: {
-        id: {"type": "string"},
-        nombre: {"type": "string"},
-        numero: {"type": "string"},
-        direccion: {"type": "string"}
+        id: {type: "string"},
+        nombre: {type: "string"},
+        numero: {type: "string", pattern: "^[0-9-]+$"},
+        direccion: {type: "string"}
     },
-    required: ["id", "name", "numero", "direccion"],
+    required: ["id", "nombre", "numero", "direccion"],
     additionalProperties: false
 };
 
-const validar= ajv.compile(esquema);
-
-const fakeDatabases = {
-    contactos: [],
-    addContacto: function(contacto){
-        this.contactos.push(contacto);
-    }
-};
-
-//Metodo para validar el esquema
+//Metodo para validar el JSON schema
 const validarHeaders = (req, res, next) =>{
-    const headers = {
-        id: req.get("id"),
-        nombre: req.get("nombre"),
-        numero: req.get("numero"),
-        direccion: req.get("direccion")
+    const datos = {
+        id: req.headers["id"],
+        nombre: req.headers["nombre"],
+        numero: req.headers["numero"],
+        direccion: req.headers["direccion"]
     };
 
-    const vald = validar(headers);
+    const validar = ajv.compile(esquema);
+    const vald = validar(datos);
 
     if(!vald){
         return res.status(400).json({error: "Introduce correctamente los datos", details: validar.errors});
     }
-    req.contacto= headers;
+    req.contactoD= datos;
     next();
 };
 
 //Metodo para agregar contacto
-app.post("/contactos", validarHeaders, (req, res)=>{
-    const {id,nombre,numero,direccion} = req.contacto;
-    
-    fakeDatabase.addContacto({id,nombre,numero,direccion});
-    res.status(200).json({message: "Contacto agregado", contacto: {id,nombre,numero,direccion}});
+app.post("/contactos", validarHeaders, (req, res, next)=>{
+    const completado =  fakeDatabase.addContacto(req.contactoD);
+    if (completado){
+       next();
+    } else {
+        return res.status(500).json({error:  "No se pudo agregar el contacto con el mismo ID"});
+    }
+}, imprimirIP, (req, res) =>{
+    return res.status(201).json(req.contactoD);
+});
+
+//Metodo para manejar tareas no permitidas
+app.use("/contactos", (req, res, next) => {
+    res.status(405).json({ error: "Método no permitido en esta ruta" });
+});
+
+//Metodo para rutas no especificadas
+app.use((req,res,next)=>{
+    res.status(404).json({error: "Ruta no encontrada"});
 });
 
 //Iniciar servidor
